@@ -1,0 +1,84 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Content-Type": "application/json",
+};
+
+async function verify(hwid: string, product: string) {
+  if (!hwid || !product) {
+    return new Response(
+      JSON.stringify({ valid: false, reason: "missing_params" }),
+      { status: 400, headers: CORS },
+    );
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("customers")
+    .select("name, product, expires_at, revoked")
+    .eq("hwid", hwid)
+    .eq("product", product)
+    .maybeSingle();
+
+  if (error) {
+    return new Response(
+      JSON.stringify({ valid: false, reason: "server_error" }),
+      { status: 500, headers: CORS },
+    );
+  }
+  if (!data) {
+    return new Response(
+      JSON.stringify({ valid: false, reason: "not_found" }),
+      { status: 200, headers: CORS },
+    );
+  }
+  if (data.revoked) {
+    return new Response(
+      JSON.stringify({ valid: false, reason: "revoked" }),
+      { status: 200, headers: CORS },
+    );
+  }
+  if (data.expires_at && new Date(data.expires_at) < new Date()) {
+    return new Response(
+      JSON.stringify({ valid: false, reason: "expired", expires_at: data.expires_at }),
+      { status: 200, headers: CORS },
+    );
+  }
+
+  return new Response(
+    JSON.stringify({
+      valid: true,
+      name: data.name,
+      product: data.product,
+      expires_at: data.expires_at,
+    }),
+    { status: 200, headers: CORS },
+  );
+}
+
+export const Route = createFileRoute("/api/public/verify")({
+  server: {
+    handlers: {
+      OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
+      GET: async ({ request }) => {
+        const url = new URL(request.url);
+        return verify(
+          url.searchParams.get("hwid") ?? "",
+          url.searchParams.get("product") ?? "",
+        );
+      },
+      POST: async ({ request }) => {
+        let body: { hwid?: string; product?: string } = {};
+        try {
+          body = await request.json();
+        } catch {
+          // ignore
+        }
+        return verify(body.hwid ?? "", body.product ?? "");
+      },
+    },
+  },
+});
