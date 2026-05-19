@@ -73,14 +73,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Aura" },
+      { name: "description", content: "License Manager Pro is a web application for managing hardware ID (HWID) licenses for software products." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Aura" },
+      { property: "og:description", content: "License Manager Pro is a web application for managing hardware ID (HWID) licenses for software products." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Aura" },
+      { name: "twitter:description", content: "License Manager Pro is a web application for managing hardware ID (HWID) licenses for software products." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ae3365e0-d998-470c-ac73-8ca69bea39cb/id-preview-e09f61df--0a091f72-1669-4ee5-b43c-620b14e4a56e.lovable.app-1779180053134.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ae3365e0-d998-470c-ac73-8ca69bea39cb/id-preview-e09f61df--0a091f72-1669-4ee5-b43c-620b14e4a56e.lovable.app-1779180053134.png" },
     ],
     links: [
       {
