@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_versions: {
+        Row: {
+          file_path: string | null
+          file_url: string | null
+          id: string
+          product: string
+          updated_at: string
+          updated_by: string | null
+          version: string
+        }
+        Insert: {
+          file_path?: string | null
+          file_url?: string | null
+          id?: string
+          product: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: string
+        }
+        Update: {
+          file_path?: string | null
+          file_url?: string | null
+          id?: string
+          product?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string

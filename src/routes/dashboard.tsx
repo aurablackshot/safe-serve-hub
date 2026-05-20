@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, LogOut, RotateCcw, Ban, Clock, Shield, Trash2 } from "lucide-react";
+import { Plus, LogOut, RotateCcw, Ban, Clock, Shield, Trash2, Upload, Package } from "lucide-react";
 import { PRODUCTS, DURATIONS, computeExpiresAt, type DurationValue } from "@/lib/products";
 
 export const Route = createFileRoute("/dashboard")({
@@ -187,6 +187,16 @@ function DashboardPage() {
             </Table>
           )}
         </Card>
+
+        <div className="mt-12 mb-6">
+          <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <Package className="size-5" /> App versions
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Upload a new build per product. Clients auto-download on next run.
+          </p>
+        </div>
+        <VersionsPanel />
       </main>
     </div>
   );
@@ -384,5 +394,196 @@ function AddCustomerDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+type AppVersion = {
+  id: string;
+  product: string;
+  version: string;
+  file_url: string | null;
+  file_path: string | null;
+  updated_at: string;
+};
+
+function VersionsPanel() {
+  const [versions, setVersions] = useState<Record<string, AppVersion>>({});
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.from("app_versions").select("*");
+    if (error) return toast.error(error.message);
+    const map: Record<string, AppVersion> = {};
+    (data as AppVersion[]).forEach((v) => (map[v.product] = v));
+    setVersions(map);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (loading) {
+    return (
+      <Card className="p-8 text-center text-muted-foreground border-border/60">
+        Loading…
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="overflow-hidden border-border/60">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Product</TableHead>
+            <TableHead>Version</TableHead>
+            <TableHead>File</TableHead>
+            <TableHead>Updated</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {PRODUCTS.map((p) => (
+            <VersionRow key={p} product={p} version={versions[p]} onChanged={load} />
+          ))}
+        </TableBody>
+      </Table>
+    </Card>
+  );
+}
+
+function VersionRow({
+  product,
+  version,
+  onChanged,
+}: {
+  product: string;
+  version: AppVersion | undefined;
+  onChanged: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [versionStr, setVersionStr] = useState(version?.version ?? "1.0.0");
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!versionStr.trim()) return toast.error("Version required");
+    setBusy(true);
+    try {
+      let file_url = version?.file_url ?? null;
+      let file_path = version?.file_path ?? null;
+
+      if (file) {
+        const ext = file.name.split(".").pop() || "ahk";
+        const path = `${product.replace(/\s+/g, "_")}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("releases")
+          .upload(path, file, { upsert: true, contentType: file.type || "application/octet-stream" });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from("releases").getPublicUrl(path);
+        file_url = pub.publicUrl;
+        file_path = path;
+      }
+
+      const { data: userData } = await supabase.auth.getUser();
+      const payload = {
+        product,
+        version: versionStr.trim(),
+        file_url,
+        file_path,
+        updated_by: userData.user?.id ?? null,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase
+        .from("app_versions")
+        .upsert(payload, { onConflict: "product" });
+      if (error) throw error;
+      toast.success(`${product} updated to v${versionStr}`);
+      setOpen(false);
+      setFile(null);
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <TableRow>
+      <TableCell className="font-medium">{product}</TableCell>
+      <TableCell className="font-mono">
+        {version ? (
+          <Badge variant="outline" className="border-primary/40 text-primary">
+            v{version.version}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground text-xs">—</span>
+        )}
+      </TableCell>
+      <TableCell>
+        {version?.file_url ? (
+          <a
+            href={version.file_url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-primary underline truncate max-w-[260px] inline-block"
+          >
+            {version.file_path ?? "download"}
+          </a>
+        ) : (
+          <span className="text-muted-foreground text-xs">no file</span>
+        )}
+      </TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        {version ? new Date(version.updated_at).toLocaleString() : "—"}
+      </TableCell>
+      <TableCell className="text-right">
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="secondary">
+              <Upload className="size-3 mr-1" /> {version ? "Update" : "Publish"}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Publish new version — {product}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={submit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor={`v-${product}`}>Version</Label>
+                <Input
+                  id={`v-${product}`}
+                  className="font-mono"
+                  value={versionStr}
+                  onChange={(e) => setVersionStr(e.target.value)}
+                  placeholder="1.2.0"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`f-${product}`}>File (.ahk or .exe)</Label>
+                <Input
+                  id={`f-${product}`}
+                  type="file"
+                  accept=".ahk,.exe,.zip"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to only bump the version number.
+                </p>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={busy} className="font-mono">
+                  {busy ? "UPLOADING..." : "PUBLISH"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </TableCell>
+    </TableRow>
   );
 }

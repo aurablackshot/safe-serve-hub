@@ -48,12 +48,20 @@ async function verify(hwid: string, product: string) {
     );
   }
 
+  const { data: ver } = await supabaseAdmin
+    .from("app_versions")
+    .select("version, file_url")
+    .eq("product", product)
+    .maybeSingle();
+
   return new Response(
     JSON.stringify({
       valid: true,
       name: data.name,
       product: data.product,
       expires_at: data.expires_at,
+      latest_version: ver?.version ?? null,
+      download_url: ver?.file_url ?? null,
     }),
     { status: 200, headers: CORS },
   );
