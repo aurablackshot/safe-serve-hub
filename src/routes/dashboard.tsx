@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, LogOut, RotateCcw, Ban, Clock, Shield, Trash2 } from "lucide-react";
+import { Plus, LogOut, RotateCcw, Ban, Clock, Shield, Trash2, Upload, Package } from "lucide-react";
 import { PRODUCTS, DURATIONS, computeExpiresAt, type DurationValue } from "@/lib/products";
 
 export const Route = createFileRoute("/dashboard")({
