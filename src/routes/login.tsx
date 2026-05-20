@@ -6,13 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Shield } from "lucide-react";
+import auraLogo from "@/assets/aura-logo.png";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign In — HWID Licensing" },
-      { name: "description", content: "Admin sign in for the HWID licensing console." },
+      { title: "Sign In — Aura Panel" },
+      { name: "description", content: "Admin sign in for the Aura Panel." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -49,11 +49,9 @@ function LoginPage() {
       <div className="absolute inset-0 -z-10 opacity-30 [background:radial-gradient(circle_at_30%_20%,oklch(0.78_0.18_145/.25),transparent_50%),radial-gradient(circle_at_70%_80%,oklch(0.5_0.18_250/.2),transparent_50%)]" />
       <Card className="w-full max-w-md p-8 border-border/60">
         <div className="flex items-center gap-3 mb-8">
-          <div className="size-10 rounded-md bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
-            <Shield className="size-5" />
-          </div>
+          <img src={auraLogo} alt="Aura" className="h-10 w-auto" />
           <div>
-            <h1 className="text-lg font-mono tracking-tight">HWID://CONSOLE</h1>
+            <h1 className="text-lg font-mono tracking-tight">Aura Panel</h1>
             <p className="text-xs text-muted-foreground">Admin authentication required</p>
           </div>
         </div>
@@ -85,9 +83,6 @@ function LoginPage() {
           <Button type="submit" disabled={loading} className="w-full font-mono">
             {loading ? "AUTHENTICATING..." : "SIGN IN"}
           </Button>
-          <p className="text-xs text-muted-foreground text-center pt-2 border-t border-border/40">
-            Registration is disabled. Accounts are provisioned by the system.
-          </p>
         </form>
       </Card>
     </div>

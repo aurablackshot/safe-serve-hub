@@ -30,13 +30,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, LogOut, RotateCcw, Ban, Clock, Shield, Trash2, Upload, Package } from "lucide-react";
+import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package } from "lucide-react";
 import { PRODUCTS, DURATIONS, computeExpiresAt, type DurationValue } from "@/lib/products";
+import auraLogo from "@/assets/aura-logo.png";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — HWID Licensing" },
+      { title: "Dashboard — Aura Panel" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -129,11 +130,9 @@ function DashboardPage() {
       <header className="border-b border-border/60 bg-card/30 backdrop-blur">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="size-9 rounded-md bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
-              <Shield className="size-4" />
-            </div>
+            <img src={auraLogo} alt="Aura" className="h-9 w-auto" />
             <div>
-              <h1 className="font-mono text-sm tracking-tight">HWID://CONSOLE</h1>
+              <h1 className="font-mono text-sm tracking-tight">Aura Panel</h1>
               <p className="text-xs text-muted-foreground">Licensing dashboard</p>
             </div>
           </div>
