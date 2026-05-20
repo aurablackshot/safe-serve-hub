@@ -187,6 +187,16 @@ function DashboardPage() {
             </Table>
           )}
         </Card>
+
+        <div className="mt-12 mb-6">
+          <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <Package className="size-5" /> App versions
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Upload a new build per product. Clients auto-download on next run.
+          </p>
+        </div>
+        <VersionsPanel />
       </main>
     </div>
   );
