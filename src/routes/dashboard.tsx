@@ -334,8 +334,23 @@ function CustomerGroup({
                 </Badge>
               )}
             </div>
-            <div className="font-mono text-xs text-muted-foreground truncate">
-              {group.hwid}
+            <div className="font-mono text-xs text-muted-foreground truncate flex items-center gap-1.5">
+              <span className="truncate">{group.hwid}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  navigator.clipboard.writeText(group.hwid).then(
+                    () => toast.success("HWID copied"),
+                    () => toast.error("Copy failed"),
+                  );
+                }}
+                className="inline-flex items-center justify-center p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                aria-label="Copy HWID"
+              >
+                <Copy className="size-3" />
+              </button>
             </div>
           </div>
         </div>
