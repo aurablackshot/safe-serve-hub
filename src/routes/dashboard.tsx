@@ -22,6 +22,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import {
   Table,
   TableBody,
   TableCell,
@@ -30,7 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package } from "lucide-react";
+import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package, ChevronDown, CalendarIcon } from "lucide-react";
 import { PRODUCTS, DURATIONS, computeExpiresAt, type DurationValue } from "@/lib/products";
 import auraLogo from "@/assets/aura-logo.png";
 
