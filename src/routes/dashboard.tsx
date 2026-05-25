@@ -120,6 +120,17 @@ function DashboardPage() {
     load();
   };
 
+  const setCustomExpiry = async (c: Customer, date: Date | undefined) => {
+    const expires_at = date ? date.toISOString() : null;
+    const { error } = await supabase
+      .from("customers")
+      .update({ expires_at, revoked: false })
+      .eq("id", c.id);
+    if (error) return toast.error(error.message);
+    toast.success("Expiry updated");
+    load();
+  };
+
   const toggleRevoke = async (c: Customer) => {
     const { error } = await supabase
       .from("customers")
@@ -160,7 +171,7 @@ function DashboardPage() {
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">Customers</h2>
             <p className="text-sm text-muted-foreground">
-              {customers.length} active licen{customers.length === 1 ? "se" : "ses"}
+              {customers.length} licen{customers.length === 1 ? "se" : "ses"} across {groupCustomers(customers).length} user{groupCustomers(customers).length === 1 ? "" : "s"}
             </p>
           </div>
           <AddCustomerDialog open={addOpen} onOpenChange={setAddOpen} onAdded={load} />
@@ -174,29 +185,18 @@ function DashboardPage() {
               No customers yet. Click <span className="text-foreground">Add customer</span> to create one.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>HWID</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customers.map((c) => (
-                  <CustomerRow
-                    key={c.id}
-                    c={c}
-                    onSetDuration={setDuration}
-                    onToggleRevoke={toggleRevoke}
-                    onDelete={remove}
-                  />
-                ))}
-              </TableBody>
-            </Table>
+            <div className="divide-y divide-border/60">
+              {groupCustomers(customers).map((g) => (
+                <CustomerGroup
+                  key={g.key}
+                  group={g}
+                  onSetDuration={setDuration}
+                  onSetCustomExpiry={setCustomExpiry}
+                  onToggleRevoke={toggleRevoke}
+                  onDelete={remove}
+                />
+              ))}
+            </div>
           )}
         </Card>
 
@@ -222,24 +222,111 @@ function statusOf(c: Customer): { label: string; tone: "ok" | "warn" | "bad" } {
   return { label: "Active", tone: "ok" };
 }
 
+type CustomerGroupT = {
+  key: string;
+  name: string;
+  hwid: string;
+  items: Customer[];
+};
+
+function groupCustomers(customers: Customer[]): CustomerGroupT[] {
+  const map = new Map<string, CustomerGroupT>();
+  for (const c of customers) {
+    const key = `${c.name.toLowerCase()}|${c.hwid.toLowerCase()}`;
+    const existing = map.get(key);
+    if (existing) existing.items.push(c);
+    else map.set(key, { key, name: c.name, hwid: c.hwid, items: [c] });
+  }
+  return Array.from(map.values());
+}
+
+function CustomerGroup({
+  group,
+  onSetDuration,
+  onSetCustomExpiry,
+  onToggleRevoke,
+  onDelete,
+}: {
+  group: CustomerGroupT;
+  onSetDuration: (c: Customer, v: DurationValue) => void;
+  onSetCustomExpiry: (c: Customer, d: Date | undefined) => void;
+  onToggleRevoke: (c: Customer) => void;
+  onDelete: (c: Customer) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  const activeCount = group.items.filter((c) => statusOf(c).tone === "ok").length;
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors text-left">
+        <div className="flex items-center gap-3 min-w-0">
+          <ChevronDown
+            className={cn(
+              "size-4 text-muted-foreground shrink-0 transition-transform",
+              !open && "-rotate-90",
+            )}
+          />
+          <div className="min-w-0">
+            <div className="font-medium truncate">{group.name}</div>
+            <div className="font-mono text-xs text-muted-foreground truncate">
+              {group.hwid}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge variant="outline" className="border-border/60">
+            {group.items.length} product{group.items.length === 1 ? "" : "s"}
+          </Badge>
+          <Badge variant="outline" className="border-primary/40 text-primary">
+            {activeCount} active
+          </Badge>
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="px-2 pb-2">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Product</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Expires</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {group.items.map((c) => (
+                <CustomerRow
+                  key={c.id}
+                  c={c}
+                  onSetDuration={onSetDuration}
+                  onSetCustomExpiry={onSetCustomExpiry}
+                  onToggleRevoke={onToggleRevoke}
+                  onDelete={onDelete}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 function CustomerRow({
   c,
   onSetDuration,
+  onSetCustomExpiry,
   onToggleRevoke,
   onDelete,
 }: {
   c: Customer;
   onSetDuration: (c: Customer, v: DurationValue) => void;
+  onSetCustomExpiry: (c: Customer, d: Date | undefined) => void;
   onToggleRevoke: (c: Customer) => void;
   onDelete: (c: Customer) => void;
 }) {
   const st = statusOf(c);
   return (
     <TableRow>
-      <TableCell className="font-medium">{c.name}</TableCell>
-      <TableCell className="font-mono text-xs text-muted-foreground max-w-[200px] truncate">
-        {c.hwid}
-      </TableCell>
       <TableCell>{c.product}</TableCell>
       <TableCell>
         <Badge
@@ -273,6 +360,23 @@ function CustomerRow({
               ))}
             </SelectContent>
           </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8">
+                <CalendarIcon className="size-3 mr-1" />
+                {c.expires_at ? format(new Date(c.expires_at), "MMM d, yyyy") : "Custom"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="single"
+                selected={c.expires_at ? new Date(c.expires_at) : undefined}
+                onSelect={(d) => onSetCustomExpiry(c, d)}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
           <Button
             variant={c.revoked ? "outline" : "secondary"}
             size="sm"
