@@ -43,7 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package, ChevronDown, CalendarIcon } from "lucide-react";
+import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package, ChevronDown, CalendarIcon, Copy } from "lucide-react";
 import { PRODUCTS, DURATIONS, computeExpiresAt, type DurationValue } from "@/lib/products";
 import auraLogo from "@/assets/aura-logo.png";
 
@@ -225,14 +225,9 @@ function DashboardPage() {
         </Card>
 
         {!loading && customers.length > 0 && (
-          <Card className="mt-4 border-border/60 p-4 flex items-center justify-between">
-            <div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                Total earnings
-              </div>
-              <p className="text-[11px] text-muted-foreground/70">
-                Excludes ADMIN and ignored HWID
-              </p>
+          <Card className="mt-4 border-border/60 border-l-2 border-l-primary p-4 flex items-center justify-between bg-gradient-to-r from-primary/15 via-primary/5 to-transparent">
+            <div className="text-primary font-semibold tracking-wide">
+              TOTAL EARNINGS
             </div>
             <div className="text-2xl font-semibold font-mono text-primary">
               ${computeTotalEarnings(customers).toLocaleString()}
@@ -334,8 +329,23 @@ function CustomerGroup({
                 </Badge>
               )}
             </div>
-            <div className="font-mono text-xs text-muted-foreground truncate">
-              {group.hwid}
+            <div className="font-mono text-xs text-muted-foreground truncate flex items-center gap-1.5">
+              <span className="truncate">{group.hwid}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  navigator.clipboard.writeText(group.hwid).then(
+                    () => toast.success("HWID copied"),
+                    () => toast.error("Copy failed"),
+                  );
+                }}
+                className="inline-flex items-center justify-center p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                aria-label="Copy HWID"
+              >
+                <Copy className="size-3" />
+              </button>
             </div>
           </div>
         </div>
