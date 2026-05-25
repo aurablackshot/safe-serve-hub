@@ -43,7 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package, ChevronDown, CalendarIcon } from "lucide-react";
+import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package, ChevronDown, CalendarIcon, Copy } from "lucide-react";
 import { PRODUCTS, DURATIONS, computeExpiresAt, type DurationValue } from "@/lib/products";
 import auraLogo from "@/assets/aura-logo.png";
 
