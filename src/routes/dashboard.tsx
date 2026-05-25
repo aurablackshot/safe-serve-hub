@@ -253,7 +253,7 @@ function CustomerGroup({
   onToggleRevoke: (c: Customer) => void;
   onDelete: (c: Customer) => void;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const activeCount = group.items.filter((c) => statusOf(c).tone === "ok").length;
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
