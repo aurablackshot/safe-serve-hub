@@ -225,14 +225,9 @@ function DashboardPage() {
         </Card>
 
         {!loading && customers.length > 0 && (
-          <Card className="mt-4 border-border/60 p-4 flex items-center justify-between">
-            <div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                Total earnings
-              </div>
-              <p className="text-[11px] text-muted-foreground/70">
-                Excludes ADMIN and ignored HWID
-              </p>
+          <Card className="mt-4 border-border/60 border-l-2 border-l-primary p-4 flex items-center justify-between bg-gradient-to-r from-primary/15 via-primary/5 to-transparent">
+            <div className="text-primary font-semibold tracking-wide">
+              TOTAL EARNINGS
             </div>
             <div className="text-2xl font-semibold font-mono text-primary">
               ${computeTotalEarnings(customers).toLocaleString()}
