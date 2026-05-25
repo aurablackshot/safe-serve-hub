@@ -47,6 +47,30 @@ import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package, ChevronDo
 import { PRODUCTS, DURATIONS, computeExpiresAt, type DurationValue } from "@/lib/products";
 import auraLogo from "@/assets/aura-logo.png";
 
+const PRICING: Record<string, { monthly: number; lifetime: number }> = {
+  "Adjustable Antiwing": { monthly: 45, lifetime: 100 },
+  "Aim Assist": { monthly: 30, lifetime: 70 },
+  "Aimlock": { monthly: 25, lifetime: 60 },
+  "Sniper": { monthly: 25, lifetime: 60 },
+  "Quickscope": { monthly: 15, lifetime: 40 },
+  "Private Sniper": { monthly: 0, lifetime: 80 },
+};
+const IGNORED_HWID = "5E992F9E-9B0D-6A4E-95B3-1316D0AB5D6D";
+
+function priceOf(c: Customer): number {
+  const p = PRICING[c.product];
+  if (!p) return 0;
+  return c.expires_at === null ? p.lifetime : p.monthly;
+}
+
+function computeTotalEarnings(customers: Customer[]): number {
+  return customers.reduce((sum, c) => {
+    if (c.name.trim().toLowerCase() === "admin") return sum;
+    if (c.hwid.trim().toUpperCase() === IGNORED_HWID.toUpperCase()) return sum;
+    return sum + priceOf(c);
+  }, 0);
+}
+
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
@@ -199,6 +223,22 @@ function DashboardPage() {
             </div>
           )}
         </Card>
+
+        {!loading && customers.length > 0 && (
+          <Card className="mt-4 border-border/60 p-4 flex items-center justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                Total earnings
+              </div>
+              <p className="text-[11px] text-muted-foreground/70">
+                Excludes ADMIN and ignored HWID
+              </p>
+            </div>
+            <div className="text-2xl font-semibold font-mono text-primary">
+              ${computeTotalEarnings(customers).toLocaleString()}
+            </div>
+          </Card>
+        )}
 
         <div className="mt-12 mb-6">
           <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
