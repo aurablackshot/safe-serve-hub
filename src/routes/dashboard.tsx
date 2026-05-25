@@ -237,7 +237,18 @@ function groupCustomers(customers: Customer[]): CustomerGroupT[] {
     if (existing) existing.items.push(c);
     else map.set(key, { key, name: c.name, hwid: c.hwid, items: [c] });
   }
-  return Array.from(map.values());
+  const groups = Array.from(map.values());
+  groups.sort((a, b) => {
+    const aAdmin = isAdminGroup(a) ? 0 : 1;
+    const bAdmin = isAdminGroup(b) ? 0 : 1;
+    if (aAdmin !== bAdmin) return aAdmin - bAdmin;
+    return a.name.localeCompare(b.name);
+  });
+  return groups;
+}
+
+function isAdminGroup(g: { name: string }): boolean {
+  return g.name.trim().toLowerCase() === "admin";
 }
 
 function CustomerGroup({
@@ -255,9 +266,16 @@ function CustomerGroup({
 }) {
   const [open, setOpen] = useState(false);
   const activeCount = group.items.filter((c) => statusOf(c).tone === "ok").length;
+  const admin = isAdminGroup(group);
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors text-left">
+      <CollapsibleTrigger
+        className={cn(
+          "w-full flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors text-left",
+          admin &&
+            "bg-gradient-to-r from-primary/15 via-primary/5 to-transparent border-l-2 border-primary",
+        )}
+      >
         <div className="flex items-center gap-3 min-w-0">
           <ChevronDown
             className={cn(
@@ -266,7 +284,16 @@ function CustomerGroup({
             )}
           />
           <div className="min-w-0">
-            <div className="font-medium truncate">{group.name}</div>
+            <div className="font-medium truncate flex items-center gap-2">
+              <span className={cn(admin && "text-primary font-semibold tracking-wide")}>
+                {group.name}
+              </span>
+              {admin && (
+                <Badge className="bg-primary text-primary-foreground font-mono text-[10px] px-1.5 py-0">
+                  PINNED
+                </Badge>
+              )}
+            </div>
             <div className="font-mono text-xs text-muted-foreground truncate">
               {group.hwid}
             </div>
