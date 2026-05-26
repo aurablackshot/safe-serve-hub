@@ -261,6 +261,16 @@ function DashboardPage() {
           </p>
         </div>
         <VersionsPanel />
+
+        <div className="mt-12 mb-6">
+          <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <Package className="size-5" /> Asset files
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Gated downloads. Only customers with a valid license can fetch these.
+          </p>
+        </div>
+        <AssetsPanel />
       </main>
     </div>
   );
