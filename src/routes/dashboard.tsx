@@ -47,6 +47,23 @@ import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package, ChevronDo
 import { PRODUCTS, DURATIONS, computeExpiresAt, type DurationValue } from "@/lib/products";
 import auraLogo from "@/assets/aura-logo.png";
 
+const ASSET_DEFS = [
+  {
+    key: "antiwing_fx",
+    label: "Antiwing Shader (.fx)",
+    product: "Adjustable Antiwing",
+    accept: ".fx",
+  },
+] as const;
+
+type AssetRow = {
+  key: string;
+  product: string;
+  file_path: string | null;
+  filename: string | null;
+  updated_at: string;
+};
+
 const PRICING: Record<string, { monthly: number; lifetime: number }> = {
   "Adjustable Antiwing": { monthly: 45, lifetime: 100 },
   "Aim Assist": { monthly: 30, lifetime: 70 },
