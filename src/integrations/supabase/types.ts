@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      assets: {
+        Row: {
+          file_path: string | null
+          filename: string | null
+          key: string
+          product: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          file_path?: string | null
+          filename?: string | null
+          key: string
+          product: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          file_path?: string | null
+          filename?: string | null
+          key?: string
+          product?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string
