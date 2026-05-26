@@ -47,6 +47,23 @@ import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package, ChevronDo
 import { PRODUCTS, DURATIONS, computeExpiresAt, type DurationValue } from "@/lib/products";
 import auraLogo from "@/assets/aura-logo.png";
 
+const ASSET_DEFS = [
+  {
+    key: "antiwing_fx",
+    label: "Antiwing Shader (.fx)",
+    product: "Adjustable Antiwing",
+    accept: ".fx",
+  },
+] as const;
+
+type AssetRow = {
+  key: string;
+  product: string;
+  file_path: string | null;
+  filename: string | null;
+  updated_at: string;
+};
+
 const PRICING: Record<string, { monthly: number; lifetime: number }> = {
   "Adjustable Antiwing": { monthly: 45, lifetime: 100 },
   "Aim Assist": { monthly: 30, lifetime: 70 },
@@ -244,6 +261,16 @@ function DashboardPage() {
           </p>
         </div>
         <VersionsPanel />
+
+        <div className="mt-12 mb-6">
+          <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <Package className="size-5" /> Asset files
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Gated downloads. Only customers with a valid license can fetch these.
+          </p>
+        </div>
+        <AssetsPanel />
       </main>
     </div>
   );
@@ -472,6 +499,183 @@ function CustomerRow({
           <Button variant="ghost" size="icon" onClick={() => onDelete(c)}>
             <Trash2 className="size-4 text-destructive" />
           </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function AssetsPanel() {
+  const [rows, setRows] = useState<Record<string, AssetRow>>({});
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.from("assets").select("*");
+    if (error) return toast.error(error.message);
+    const map: Record<string, AssetRow> = {};
+    (data as AssetRow[]).forEach((r) => (map[r.key] = r));
+    setRows(map);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (loading) {
+    return (
+      <Card className="p-8 text-center text-muted-foreground border-border/60">
+        Loading…
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="overflow-hidden border-border/60">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Asset</TableHead>
+            <TableHead>Product</TableHead>
+            <TableHead>File</TableHead>
+            <TableHead>Updated</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {ASSET_DEFS.map((def) => (
+            <AssetRowView
+              key={def.key}
+              def={def}
+              row={rows[def.key]}
+              onChanged={load}
+            />
+          ))}
+        </TableBody>
+      </Table>
+    </Card>
+  );
+}
+
+function AssetRowView({
+  def,
+  row,
+  onChanged,
+}: {
+  def: (typeof ASSET_DEFS)[number];
+  row: AssetRow | undefined;
+  onChanged: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const downloadUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/api/public/asset?key=${encodeURIComponent(def.key)}&hwid=YOUR_HWID&product=${encodeURIComponent(def.product)}`;
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) return toast.error("Choose a file");
+    setBusy(true);
+    try {
+      const ext = file.name.split(".").pop() || "bin";
+      const path = `${def.key}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("assets")
+        .upload(path, file, {
+          upsert: true,
+          contentType: file.type || "application/octet-stream",
+        });
+      if (upErr) throw upErr;
+
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await supabase.from("assets").upsert(
+        {
+          key: def.key,
+          product: def.product,
+          file_path: path,
+          filename: file.name,
+          updated_by: userData.user?.id ?? null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" },
+      );
+      if (error) throw error;
+      toast.success(`${def.label} uploaded`);
+      setOpen(false);
+      setFile(null);
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <TableRow>
+      <TableCell className="font-medium">{def.label}</TableCell>
+      <TableCell className="text-sm text-muted-foreground">{def.product}</TableCell>
+      <TableCell>
+        {row?.file_path ? (
+          <span className="text-xs font-mono text-primary truncate max-w-[260px] inline-block">
+            {row.filename ?? row.file_path}
+          </span>
+        ) : (
+          <span className="text-muted-foreground text-xs">no file</span>
+        )}
+      </TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        {row ? new Date(row.updated_at).toLocaleString() : "—"}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              navigator.clipboard.writeText(downloadUrl).then(
+                () => toast.success("Download URL copied"),
+                () => toast.error("Copy failed"),
+              );
+            }}
+          >
+            <Copy className="size-3 mr-1" /> URL
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="secondary">
+                <Upload className="size-3 mr-1" /> {row ? "Replace" : "Upload"}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Upload {def.label}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={submit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor={`a-${def.key}`}>File ({def.accept})</Label>
+                  <Input
+                    id={`a-${def.key}`}
+                    type="file"
+                    accept={def.accept}
+                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Download URL (replace YOUR_HWID at runtime)</Label>
+                  <code className="block text-[10px] bg-muted p-2 rounded font-mono break-all">
+                    {downloadUrl}
+                  </code>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={busy} className="font-mono">
+                    {busy ? "UPLOADING..." : "UPLOAD"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </TableCell>
     </TableRow>

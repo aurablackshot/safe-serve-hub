@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicVerifyRouteImport } from './routes/api/public/verify'
+import { Route as ApiPublicAssetRouteImport } from './routes/api/public/asset'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -34,17 +35,24 @@ const ApiPublicVerifyRoute = ApiPublicVerifyRouteImport.update({
   path: '/api/public/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAssetRoute = ApiPublicAssetRouteImport.update({
+  id: '/api/public/asset',
+  path: '/api/public/asset',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/api/public/asset': typeof ApiPublicAssetRoute
   '/api/public/verify': typeof ApiPublicVerifyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/api/public/asset': typeof ApiPublicAssetRoute
   '/api/public/verify': typeof ApiPublicVerifyRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,33 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/api/public/asset': typeof ApiPublicAssetRoute
   '/api/public/verify': typeof ApiPublicVerifyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login' | '/api/public/verify'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/api/public/asset'
+    | '/api/public/verify'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/api/public/verify'
-  id: '__root__' | '/' | '/dashboard' | '/login' | '/api/public/verify'
+  to: '/' | '/dashboard' | '/login' | '/api/public/asset' | '/api/public/verify'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/api/public/asset'
+    | '/api/public/verify'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  ApiPublicAssetRoute: typeof ApiPublicAssetRoute
   ApiPublicVerifyRoute: typeof ApiPublicVerifyRoute
 }
 
@@ -99,6 +120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/asset': {
+      id: '/api/public/asset'
+      path: '/api/public/asset'
+      fullPath: '/api/public/asset'
+      preLoaderRoute: typeof ApiPublicAssetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -106,6 +134,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  ApiPublicAssetRoute: ApiPublicAssetRoute,
   ApiPublicVerifyRoute: ApiPublicVerifyRoute,
 }
 export const routeTree = rootRouteImport
