@@ -54,6 +54,12 @@ const ASSET_DEFS = [
     product: "Adjustable Antiwing",
     accept: ".fx",
   },
+  {
+    key: "ac_bypass",
+    label: "AC Bypass (.exe)",
+    product: "Adjustable Antiwing",
+    accept: ".exe",
+  },
 ] as const;
 
 type AssetRow = {
