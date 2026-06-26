@@ -60,6 +60,18 @@ const ASSET_DEFS = [
     product: "Adjustable Antiwing",
     accept: ".exe",
   },
+  {
+    key: "antiwing_modified_zip",
+    label: "Antiwing Modified (.zip)",
+    product: "Adjustable Antiwing",
+    accept: ".zip",
+  },
+  {
+    key: "antiwing_original_zip",
+    label: "Antiwing Original (.zip)",
+    product: "Adjustable Antiwing",
+    accept: ".zip",
+  },
 ] as const;
 
 type AssetRow = {
