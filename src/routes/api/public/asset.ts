@@ -36,18 +36,19 @@ async function handle(key: string, hwid: string, product: string) {
     return new Response("product_mismatch", { status: 403 });
   }
 
-  // Stream the file from the private bucket
-  const { data: blob, error: dlErr } = await supabaseAdmin.storage
-    .from("assets")
-    .download(asset.file_path);
-  if (dlErr || !blob) return new Response("download_failed", { status: 500 });
-
+  // Issue a short-lived signed URL and redirect. This handles large files
+  // (hundreds of MB) that would exceed the worker's memory if streamed.
   const filename = asset.filename || asset.file_path.split("/").pop() || "asset";
-  return new Response(blob, {
-    status: 200,
+  const { data: signed, error: signErr } = await supabaseAdmin.storage
+    .from("assets")
+    .createSignedUrl(asset.file_path, 300, { download: filename });
+  if (signErr || !signed?.signedUrl) {
+    return new Response("sign_failed", { status: 500 });
+  }
+  return new Response(null, {
+    status: 302,
     headers: {
-      "Content-Type": "application/octet-stream",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      Location: signed.signedUrl,
       "Cache-Control": "no-store",
     },
   });
