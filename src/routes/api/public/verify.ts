@@ -57,6 +57,7 @@ async function verify(hwid: string, product: string) {
   return new Response(
     JSON.stringify({
       valid: true,
+      hwid: hwid,
       name: data.name,
       product: data.product,
       expires_at: data.expires_at,
