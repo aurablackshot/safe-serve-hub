@@ -20,16 +20,23 @@ async function handle(key: string, hwid: string, product: string) {
   }
 
   // License check (same logic as verify)
-  const { data: cust, error } = await supabaseAdmin
-    .from("customers")
-    .select("expires_at, revoked, created_at")
-    .eq("hwid", hwid)
-    .eq("product", product)
-    .order("created_at", { ascending: false })
-    .limit(10);
+  let cust: (CustomerLicense & { created_at: string })[] | null = null;
+  try {
+    const result = await supabaseAdmin
+      .from("customers")
+      .select("expires_at, revoked, created_at")
+      .eq("hwid", hwid)
+      .eq("product", product)
+      .order("created_at", { ascending: false })
+      .limit(10);
 
-  if (error) {
-    console.error("[asset] customers lookup failed", { key, hwid, product, error });
+    if (result.error) {
+      console.error("[asset] customers lookup failed", { key, hwid, product, error: result.error });
+      return new Response("server_error", { status: 500 });
+    }
+    cust = result.data;
+  } catch (error) {
+    console.error("[asset] customers lookup threw", { key, hwid, product, error });
     return new Response("server_error", { status: 500 });
   }
   if (!cust?.length) return new Response("not_found", { status: 403 });

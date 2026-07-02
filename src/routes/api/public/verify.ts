@@ -50,21 +50,32 @@ async function verify(hwid: string, product: string) {
     );
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("customers")
-    .select("name, product, expires_at, revoked, created_at")
-    .eq("hwid", hwid)
-    .eq("product", product)
-    .order("created_at", { ascending: false })
-    .limit(10);
+  let data: (CustomerLicense & { created_at: string })[] | null = null;
+  try {
+    const result = await supabaseAdmin
+      .from("customers")
+      .select("name, product, expires_at, revoked, created_at")
+      .eq("hwid", hwid)
+      .eq("product", product)
+      .order("created_at", { ascending: false })
+      .limit(10);
 
-  if (error) {
-    console.error("[verify] customers lookup failed", { hwid, product, error });
+    if (result.error) {
+      console.error("[verify] customers lookup failed", { hwid, product, error: result.error });
+      return new Response(
+        build({ valid: false, reason: "server_error" }),
+        { status: 200, headers: CORS },
+      );
+    }
+    data = result.data;
+  } catch (error) {
+    console.error("[verify] customers lookup threw", { hwid, product, error });
     return new Response(
       build({ valid: false, reason: "server_error" }),
-      { status: 500, headers: CORS },
+      { status: 200, headers: CORS },
     );
   }
+
   if (!data?.length) {
     return new Response(
       build({ valid: false, reason: "not_found" }),
