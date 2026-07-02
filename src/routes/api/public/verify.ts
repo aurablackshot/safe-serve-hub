@@ -27,6 +27,21 @@ function build(obj: Record<string, string | number | boolean | null>) {
   return "{" + Object.entries(obj).map(([k, v]) => kv(k, v)).join(",") + "}";
 }
 
+type CustomerLicense = {
+  name: string;
+  product: string;
+  expires_at: string | null;
+  revoked: boolean;
+};
+
+function isExpired(expiresAt: string | null) {
+  return !!expiresAt && new Date(expiresAt) < new Date();
+}
+
+function chooseLicense(rows: CustomerLicense[]) {
+  return rows.find((row) => !row.revoked && !isExpired(row.expires_at)) ?? rows[0];
+}
+
 async function verify(hwid: string, product: string) {
   if (!hwid || !product) {
     return new Response(
@@ -37,32 +52,35 @@ async function verify(hwid: string, product: string) {
 
   const { data, error } = await supabaseAdmin
     .from("customers")
-    .select("name, product, expires_at, revoked")
+    .select("name, product, expires_at, revoked, created_at")
     .eq("hwid", hwid)
     .eq("product", product)
-    .maybeSingle();
+    .order("created_at", { ascending: false })
+    .limit(10);
 
   if (error) {
+    console.error("[verify] customers lookup failed", { hwid, product, error });
     return new Response(
       build({ valid: false, reason: "server_error" }),
       { status: 500, headers: CORS },
     );
   }
-  if (!data) {
+  if (!data?.length) {
     return new Response(
       build({ valid: false, reason: "not_found" }),
       { status: 200, headers: CORS },
     );
   }
-  if (data.revoked) {
+  const customer = chooseLicense(data);
+  if (customer.revoked) {
     return new Response(
       build({ valid: false, reason: "revoked" }),
       { status: 200, headers: CORS },
     );
   }
-  if (data.expires_at && new Date(data.expires_at) < new Date()) {
+  if (isExpired(customer.expires_at)) {
     return new Response(
-      build({ valid: false, reason: "expired", expires_at: data.expires_at }),
+      build({ valid: false, reason: "expired", expires_at: customer.expires_at }),
       { status: 200, headers: CORS },
     );
   }
@@ -77,9 +95,9 @@ async function verify(hwid: string, product: string) {
     build({
       valid: true,
       hwid: hwid,
-      name: data.name,
-      product: data.product,
-      expires_at: data.expires_at ?? null,
+      name: customer.name,
+      product: customer.product,
+      expires_at: customer.expires_at ?? null,
       latest_version: ver?.version ?? null,
       download_url: ver?.file_url ?? null,
     }),

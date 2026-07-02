@@ -1,6 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+type CustomerLicense = {
+  expires_at: string | null;
+  revoked: boolean;
+};
+
+function isExpired(expiresAt: string | null) {
+  return !!expiresAt && new Date(expiresAt) < new Date();
+}
+
+function chooseLicense(rows: CustomerLicense[]) {
+  return rows.find((row) => !row.revoked && !isExpired(row.expires_at)) ?? rows[0];
+}
+
 async function handle(key: string, hwid: string, product: string) {
   if (!key || !hwid || !product) {
     return new Response("missing_params", { status: 400 });
@@ -9,15 +22,20 @@ async function handle(key: string, hwid: string, product: string) {
   // License check (same logic as verify)
   const { data: cust, error } = await supabaseAdmin
     .from("customers")
-    .select("expires_at, revoked")
+    .select("expires_at, revoked, created_at")
     .eq("hwid", hwid)
     .eq("product", product)
-    .maybeSingle();
+    .order("created_at", { ascending: false })
+    .limit(10);
 
-  if (error) return new Response("server_error", { status: 500 });
-  if (!cust) return new Response("not_found", { status: 403 });
-  if (cust.revoked) return new Response("revoked", { status: 403 });
-  if (cust.expires_at && new Date(cust.expires_at) < new Date()) {
+  if (error) {
+    console.error("[asset] customers lookup failed", { key, hwid, product, error });
+    return new Response("server_error", { status: 500 });
+  }
+  if (!cust?.length) return new Response("not_found", { status: 403 });
+  const license = chooseLicense(cust);
+  if (license.revoked) return new Response("revoked", { status: 403 });
+  if (isExpired(license.expires_at)) {
     return new Response("expired", { status: 403 });
   }
 
