@@ -893,34 +893,27 @@ function VersionRow({
     if (!versionStr.trim()) return toast.error("Version required");
     setBusy(true);
     try {
-      let file_url = version?.file_url ?? null;
-      let file_path = version?.file_path ?? null;
-
+      const { data: userData } = await supabase.auth.getUser();
+      const formData = new FormData();
+      formData.append("product", product);
+      formData.append("version", versionStr.trim());
       if (file) {
-        const ext = file.name.split(".").pop() || "ahk";
-        const path = `${product.replace(/\s+/g, "_")}/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("releases")
-          .upload(path, file, { upsert: true, contentType: file.type || "application/octet-stream" });
-        if (upErr) throw upErr;
-        const { data: pub } = supabase.storage.from("releases").getPublicUrl(path);
-        file_url = pub.publicUrl;
-        file_path = path;
+        formData.append("file", file);
+      }
+      if (userData.user?.id) {
+        formData.append("updated_by", userData.user.id);
       }
 
-      const { data: userData } = await supabase.auth.getUser();
-      const payload = {
-        product,
-        version: versionStr.trim(),
-        file_url,
-        file_path,
-        updated_by: userData.user?.id ?? null,
-        updated_at: new Date().toISOString(),
-      };
-      const { error } = await supabase
-        .from("app_versions")
-        .upsert(payload, { onConflict: "product" });
-      if (error) throw error;
+      const response = await fetch("/api/admin/publish-version", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result?.error || "Publish failed");
+      }
+
       toast.success(`${product} updated to v${versionStr}`);
       setOpen(false);
       setFile(null);

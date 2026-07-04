@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicVerifyRouteImport } from './routes/api/public/verify'
 import { Route as ApiPublicAssetRouteImport } from './routes/api/public/asset'
 import { Route as ApiAdminUploadFileRouteImport } from './routes/api/admin/upload-file'
+import { Route as ApiAdminPublishVersionRouteImport } from './routes/api/admin/publish-version'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -46,11 +47,17 @@ const ApiAdminUploadFileRoute = ApiAdminUploadFileRouteImport.update({
   path: '/api/admin/upload-file',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminPublishVersionRoute = ApiAdminPublishVersionRouteImport.update({
+  id: '/api/admin/publish-version',
+  path: '/api/admin/publish-version',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/api/admin/publish-version': typeof ApiAdminPublishVersionRoute
   '/api/admin/upload-file': typeof ApiAdminUploadFileRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
   '/api/public/verify': typeof ApiPublicVerifyRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/api/admin/publish-version': typeof ApiAdminPublishVersionRoute
   '/api/admin/upload-file': typeof ApiAdminUploadFileRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
   '/api/public/verify': typeof ApiPublicVerifyRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/api/admin/publish-version': typeof ApiAdminPublishVersionRoute
   '/api/admin/upload-file': typeof ApiAdminUploadFileRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
   '/api/public/verify': typeof ApiPublicVerifyRoute
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/api/admin/publish-version'
     | '/api/admin/upload-file'
     | '/api/public/asset'
     | '/api/public/verify'
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/api/admin/publish-version'
     | '/api/admin/upload-file'
     | '/api/public/asset'
     | '/api/public/verify'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/api/admin/publish-version'
     | '/api/admin/upload-file'
     | '/api/public/asset'
     | '/api/public/verify'
@@ -103,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  ApiAdminPublishVersionRoute: typeof ApiAdminPublishVersionRoute
   ApiAdminUploadFileRoute: typeof ApiAdminUploadFileRoute
   ApiPublicAssetRoute: typeof ApiPublicAssetRoute
   ApiPublicVerifyRoute: typeof ApiPublicVerifyRoute
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminUploadFileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/publish-version': {
+      id: '/api/admin/publish-version'
+      path: '/api/admin/publish-version'
+      fullPath: '/api/admin/publish-version'
+      preLoaderRoute: typeof ApiAdminPublishVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -159,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  ApiAdminPublishVersionRoute: ApiAdminPublishVersionRoute,
   ApiAdminUploadFileRoute: ApiAdminUploadFileRoute,
   ApiPublicAssetRoute: ApiPublicAssetRoute,
   ApiPublicVerifyRoute: ApiPublicVerifyRoute,
@@ -166,3 +187,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
