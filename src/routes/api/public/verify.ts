@@ -8,42 +8,90 @@ const CORS = {
   "Content-Type": "application/json",
 };
 
+// Hand-built JSON — guarantees no whitespace between keys/values so
+// simple substring checks like InStr(body, `"valid":true`) always match.
+function jsonEscape(s: string) {
+  return s
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\t/g, "\\t");
+}
+function kv(key: string, value: string | number | boolean | null) {
+  if (value === null) return `"${key}":null`;
+  if (typeof value === "boolean" || typeof value === "number") return `"${key}":${value}`;
+  return `"${key}":"${jsonEscape(value)}"`;
+}
+function build(obj: Record<string, string | number | boolean | null>) {
+  return "{" + Object.entries(obj).map(([k, v]) => kv(k, v)).join(",") + "}";
+}
+
+type CustomerLicense = {
+  name: string;
+  product: string;
+  expires_at: string | null;
+  revoked: boolean;
+};
+
+function isExpired(expiresAt: string | null) {
+  return !!expiresAt && new Date(expiresAt) < new Date();
+}
+
+function chooseLicense(rows: CustomerLicense[]) {
+  return rows.find((row) => !row.revoked && !isExpired(row.expires_at)) ?? rows[0];
+}
+
 async function verify(hwid: string, product: string) {
   if (!hwid || !product) {
     return new Response(
-      JSON.stringify({ valid: false, reason: "missing_params" }),
+      build({ valid: false, reason: "missing_params" }),
       { status: 400, headers: CORS },
     );
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("customers")
-    .select("name, product, expires_at, revoked")
-    .eq("hwid", hwid)
-    .eq("product", product)
-    .maybeSingle();
+  let data: (CustomerLicense & { created_at: string })[] | null = null;
+  try {
+    const result = await supabaseAdmin
+      .from("customers")
+      .select("name, product, expires_at, revoked, created_at")
+      .eq("hwid", hwid)
+      .eq("product", product)
+      .order("created_at", { ascending: false })
+      .limit(10);
 
-  if (error) {
+    if (result.error) {
+      console.error("[verify] customers lookup failed", { hwid, product, error: result.error });
+      return new Response(
+        build({ valid: false, reason: "server_error" }),
+        { status: 200, headers: CORS },
+      );
+    }
+    data = result.data;
+  } catch (error) {
+    console.error("[verify] customers lookup threw", { hwid, product, error });
     return new Response(
-      JSON.stringify({ valid: false, reason: "server_error" }),
-      { status: 500, headers: CORS },
-    );
-  }
-  if (!data) {
-    return new Response(
-      JSON.stringify({ valid: false, reason: "not_found" }),
+      build({ valid: false, reason: "server_error" }),
       { status: 200, headers: CORS },
     );
   }
-  if (data.revoked) {
+
+  if (!data?.length) {
     return new Response(
-      JSON.stringify({ valid: false, reason: "revoked" }),
+      build({ valid: false, reason: "not_found" }),
       { status: 200, headers: CORS },
     );
   }
-  if (data.expires_at && new Date(data.expires_at) < new Date()) {
+  const customer = chooseLicense(data);
+  if (customer.revoked) {
     return new Response(
-      JSON.stringify({ valid: false, reason: "expired", expires_at: data.expires_at }),
+      build({ valid: false, reason: "revoked" }),
+      { status: 200, headers: CORS },
+    );
+  }
+  if (isExpired(customer.expires_at)) {
+    return new Response(
+      build({ valid: false, reason: "expired", expires_at: customer.expires_at }),
       { status: 200, headers: CORS },
     );
   }
@@ -55,11 +103,12 @@ async function verify(hwid: string, product: string) {
     .maybeSingle();
 
   return new Response(
-    JSON.stringify({
+    build({
       valid: true,
-      name: data.name,
-      product: data.product,
-      expires_at: data.expires_at,
+      hwid: hwid,
+      name: customer.name,
+      product: customer.product,
+      expires_at: customer.expires_at ?? null,
       latest_version: ver?.version ?? null,
       download_url: ver?.file_url ?? null,
     }),

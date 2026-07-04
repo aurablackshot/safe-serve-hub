@@ -14,6 +14,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicVerifyRouteImport } from './routes/api/public/verify'
 import { Route as ApiPublicAssetRouteImport } from './routes/api/public/asset'
+import { Route as ApiAdminUploadFileRouteImport } from './routes/api/admin/upload-file'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -40,11 +41,17 @@ const ApiPublicAssetRoute = ApiPublicAssetRouteImport.update({
   path: '/api/public/asset',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminUploadFileRoute = ApiAdminUploadFileRouteImport.update({
+  id: '/api/admin/upload-file',
+  path: '/api/admin/upload-file',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/api/admin/upload-file': typeof ApiAdminUploadFileRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
   '/api/public/verify': typeof ApiPublicVerifyRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/api/admin/upload-file': typeof ApiAdminUploadFileRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
   '/api/public/verify': typeof ApiPublicVerifyRoute
 }
@@ -60,6 +68,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/api/admin/upload-file': typeof ApiAdminUploadFileRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
   '/api/public/verify': typeof ApiPublicVerifyRoute
 }
@@ -69,15 +78,23 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/api/admin/upload-file'
     | '/api/public/asset'
     | '/api/public/verify'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/api/public/asset' | '/api/public/verify'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/api/admin/upload-file'
+    | '/api/public/asset'
+    | '/api/public/verify'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
     | '/login'
+    | '/api/admin/upload-file'
     | '/api/public/asset'
     | '/api/public/verify'
   fileRoutesById: FileRoutesById
@@ -86,6 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  ApiAdminUploadFileRoute: typeof ApiAdminUploadFileRoute
   ApiPublicAssetRoute: typeof ApiPublicAssetRoute
   ApiPublicVerifyRoute: typeof ApiPublicVerifyRoute
 }
@@ -127,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAssetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/upload-file': {
+      id: '/api/admin/upload-file'
+      path: '/api/admin/upload-file'
+      fullPath: '/api/admin/upload-file'
+      preLoaderRoute: typeof ApiAdminUploadFileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -134,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  ApiAdminUploadFileRoute: ApiAdminUploadFileRoute,
   ApiPublicAssetRoute: ApiPublicAssetRoute,
   ApiPublicVerifyRoute: ApiPublicVerifyRoute,
 }
