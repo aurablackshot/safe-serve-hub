@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import auraLogo from "@/assets/aura-logo.png";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" && s.next.startsWith("/") ? s.next : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Sign In — Aura Panel" },
@@ -21,15 +24,20 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  const target = next ?? "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
+      if (data.session) {
+        if (next) window.location.href = next;
+        else navigate({ to: "/dashboard" });
+      }
     });
-  }, [navigate]);
+  }, [navigate, next]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +49,8 @@ function LoginPage() {
       return;
     }
     toast.success("Authenticated");
-    navigate({ to: "/dashboard" });
+    if (next) window.location.href = next;
+    else navigate({ to: target });
   };
 
   return (
