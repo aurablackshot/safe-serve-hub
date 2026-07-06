@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://rsmnxclmeqoumevidgaq.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "aura-panel-mcp",
+      "version": "0.1.0",
+      "title": "Aura Panel MCP"
+    },
+    "tools": [
+      {
+        "name": "list_products",
+        "title": "List products",
+        "description": "List all Aura product names that licenses can be issued for.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_customers",
+        "title": "List customers",
+        "description": "List customer licenses. Optionally filter by product name and/or HWID. Requires admin sign-in.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "product": {
+              "description": "Filter by exact product name.",
+              "type": "string"
+            },
+            "hwid": {
+              "description": "Filter by exact hardware ID.",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Max rows (default 50).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_customer",
+        "title": "Create customer license",
+        "description": "Issue a new license for a customer by name, HWID, product, and duration (7d, 30d, or lifetime). Requires admin sign-in.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Customer display name."
+            },
+            "hwid": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Hardware ID from the customer's machine."
+            },
+            "product": {
+              "type": "string",
+              "enum": [
+                "Adjustable Antiwing",
+                "Aim Assist",
+                "Aimlock",
+                "Sniper",
+                "Quickscope",
+                "Private Sniper"
+              ],
+              "description": "Product name."
+            },
+            "duration": {
+              "type": "string",
+              "enum": [
+                "7d",
+                "30d",
+                "lifetime"
+              ],
+              "description": "License duration: 7d, 30d, or lifetime."
+            }
+          },
+          "required": [
+            "name",
+            "hwid",
+            "product",
+            "duration"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "revoke_customer",
+        "title": "Revoke customer license",
+        "description": "Revoke (or un-revoke) a customer license by row id. Requires admin sign-in.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Customer row UUID."
+            },
+            "revoked": {
+              "description": "Defaults to true (revoke).",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "verify_license",
+        "title": "Verify license",
+        "description": "Look up a customer license by HWID and product to see if it's valid, expired, or revoked. Requires admin sign-in.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "hwid": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Hardware ID."
+            },
+            "product": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Product name."
+            }
+          },
+          "required": [
+            "hwid",
+            "product"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_app_versions",
+        "title": "List app versions",
+        "description": "List the current published version and download URL for each product.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
