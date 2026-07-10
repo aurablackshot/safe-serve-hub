@@ -1,5 +1,6 @@
 export const PRODUCTS = [
   "Adjustable Antiwing",
+  "Normal Adjustable",
   "Aim Assist",
   "Aimlock",
   "Sniper",
