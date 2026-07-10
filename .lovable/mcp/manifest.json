@@ -90,6 +90,7 @@
               "type": "string",
               "enum": [
                 "Adjustable Antiwing",
+                "Normal Adjustable",
                 "Aim Assist",
                 "Aimlock",
                 "Sniper",
