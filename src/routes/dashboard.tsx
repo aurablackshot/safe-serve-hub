@@ -356,16 +356,21 @@ function CustomerGroup({
   onSetCustomExpiry,
   onToggleRevoke,
   onDelete,
+  onEditHwid,
 }: {
   group: CustomerGroupT;
   onSetDuration: (c: Customer, v: DurationValue) => void;
   onSetCustomExpiry: (c: Customer, d: Date | undefined) => void;
   onToggleRevoke: (c: Customer) => void;
   onDelete: (c: Customer) => void;
+  onEditHwid: (g: CustomerGroupT, hwid: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draftHwid, setDraftHwid] = useState(group.hwid);
   const activeCount = group.items.filter((c) => statusOf(c).tone === "ok").length;
   const admin = isAdminGroup(group);
+  const canEditHwid = /(^|\s)cc(\s|$)/i.test(group.name.trim());
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger
@@ -394,7 +399,62 @@ function CustomerGroup({
               )}
             </div>
             <div className="font-mono text-xs text-muted-foreground truncate flex items-center gap-1.5">
-              <span className="truncate">{group.hwid}</span>
+              {editing ? (
+                <span
+                  className="flex items-center gap-1.5"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
+                >
+                  <Input
+                    value={draftHwid}
+                    onChange={(e) => setDraftHwid(e.target.value)}
+                    className="h-7 w-[22rem] font-mono text-xs"
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-7"
+                    onClick={() => {
+                      onEditHwid(group, draftHwid);
+                      setEditing(false);
+                    }}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7"
+                    onClick={() => {
+                      setDraftHwid(group.hwid);
+                      setEditing(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </span>
+              ) : (
+                <span className="truncate">{group.hwid}</span>
+              )}
+              {canEditHwid && !editing && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setDraftHwid(group.hwid);
+                    setEditing(true);
+                  }}
+                  className="inline-flex items-center justify-center p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                  aria-label="Edit HWID"
+                >
+                  <Pencil className="size-3" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={(e) => {
