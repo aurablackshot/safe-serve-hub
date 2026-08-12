@@ -43,7 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package, ChevronDown, CalendarIcon, Copy } from "lucide-react";
+import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package, ChevronDown, CalendarIcon, Copy, Pencil } from "lucide-react";
 import { PRODUCTS, DURATIONS, computeExpiresAt, type DurationValue } from "@/lib/products";
 import auraLogo from "@/assets/aura-logo.png";
 
@@ -154,14 +154,14 @@ function DashboardPage() {
     let mounted = true;
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) {
-        navigate({ to: "/login" });
+        navigate({ to: "/login", search: {} });
         return;
       }
       await load();
       if (mounted) setLoading(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (!session) navigate({ to: "/login" });
+      if (!session) navigate({ to: "/login", search: {} });
     });
     return () => {
       mounted = false;
@@ -171,7 +171,7 @@ function DashboardPage() {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    navigate({ to: "/login" });
+    navigate({ to: "/login", search: {} });
   };
 
   const setDuration = async (c: Customer, value: DurationValue) => {
