@@ -43,7 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package, ChevronDown, CalendarIcon, Copy } from "lucide-react";
+import { Plus, LogOut, RotateCcw, Ban, Clock, Trash2, Upload, Package, ChevronDown, CalendarIcon, Copy, Pencil } from "lucide-react";
 import { PRODUCTS, DURATIONS, computeExpiresAt, type DurationValue } from "@/lib/products";
 import auraLogo from "@/assets/aura-logo.png";
 
@@ -154,14 +154,14 @@ function DashboardPage() {
     let mounted = true;
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) {
-        navigate({ to: "/login" });
+        navigate({ to: "/login", search: {} });
         return;
       }
       await load();
       if (mounted) setLoading(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (!session) navigate({ to: "/login" });
+      if (!session) navigate({ to: "/login", search: {} });
     });
     return () => {
       mounted = false;
@@ -171,7 +171,7 @@ function DashboardPage() {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    navigate({ to: "/login" });
+    navigate({ to: "/login", search: {} });
   };
 
   const setDuration = async (c: Customer, value: DurationValue) => {
@@ -211,6 +211,18 @@ function DashboardPage() {
     const { error } = await supabase.from("customers").delete().eq("id", c.id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
+    load();
+  };
+
+  const updateGroupHwid = async (g: CustomerGroupT, newHwid: string) => {
+    const value = newHwid.trim();
+    if (!value) return toast.error("HWID cannot be empty");
+    const { error } = await supabase
+      .from("customers")
+      .update({ hwid: value })
+      .in("id", g.items.map((c) => c.id));
+    if (error) return toast.error(error.message);
+    toast.success("HWID updated");
     load();
   };
 
@@ -259,6 +271,7 @@ function DashboardPage() {
                   onSetCustomExpiry={setCustomExpiry}
                   onToggleRevoke={toggleRevoke}
                   onDelete={remove}
+                  onEditHwid={updateGroupHwid}
                 />
               ))}
             </div>
@@ -343,16 +356,21 @@ function CustomerGroup({
   onSetCustomExpiry,
   onToggleRevoke,
   onDelete,
+  onEditHwid,
 }: {
   group: CustomerGroupT;
   onSetDuration: (c: Customer, v: DurationValue) => void;
   onSetCustomExpiry: (c: Customer, d: Date | undefined) => void;
   onToggleRevoke: (c: Customer) => void;
   onDelete: (c: Customer) => void;
+  onEditHwid: (g: CustomerGroupT, hwid: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draftHwid, setDraftHwid] = useState(group.hwid);
   const activeCount = group.items.filter((c) => statusOf(c).tone === "ok").length;
   const admin = isAdminGroup(group);
+  const canEditHwid = /(^|\s)cc(\s|$)/i.test(group.name.trim());
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger
@@ -381,7 +399,62 @@ function CustomerGroup({
               )}
             </div>
             <div className="font-mono text-xs text-muted-foreground truncate flex items-center gap-1.5">
-              <span className="truncate">{group.hwid}</span>
+              {editing ? (
+                <span
+                  className="flex items-center gap-1.5"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
+                >
+                  <Input
+                    value={draftHwid}
+                    onChange={(e) => setDraftHwid(e.target.value)}
+                    className="h-7 w-[22rem] font-mono text-xs"
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-7"
+                    onClick={() => {
+                      onEditHwid(group, draftHwid);
+                      setEditing(false);
+                    }}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7"
+                    onClick={() => {
+                      setDraftHwid(group.hwid);
+                      setEditing(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </span>
+              ) : (
+                <span className="truncate">{group.hwid}</span>
+              )}
+              {canEditHwid && !editing && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setDraftHwid(group.hwid);
+                    setEditing(true);
+                  }}
+                  className="inline-flex items-center justify-center p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                  aria-label="Edit HWID"
+                >
+                  <Pencil className="size-3" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={(e) => {
