@@ -214,6 +214,18 @@ function DashboardPage() {
     load();
   };
 
+  const updateGroupHwid = async (g: CustomerGroupT, newHwid: string) => {
+    const value = newHwid.trim();
+    if (!value) return toast.error("HWID cannot be empty");
+    const { error } = await supabase
+      .from("customers")
+      .update({ hwid: value })
+      .in("id", g.items.map((c) => c.id));
+    if (error) return toast.error(error.message);
+    toast.success("HWID updated");
+    load();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60 bg-card/30 backdrop-blur">
@@ -259,6 +271,7 @@ function DashboardPage() {
                   onSetCustomExpiry={setCustomExpiry}
                   onToggleRevoke={toggleRevoke}
                   onDelete={remove}
+                  onEditHwid={updateGroupHwid}
                 />
               ))}
             </div>
