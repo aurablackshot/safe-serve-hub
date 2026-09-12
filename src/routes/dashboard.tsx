@@ -154,14 +154,14 @@ function DashboardPage() {
     let mounted = true;
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) {
-        navigate({ to: "/login", search: {} });
+        navigate({ to: "/login" });
         return;
       }
       await load();
       if (mounted) setLoading(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (!session) navigate({ to: "/login", search: {} });
+      if (!session) navigate({ to: "/login" });
     });
     return () => {
       mounted = false;
@@ -171,7 +171,7 @@ function DashboardPage() {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    navigate({ to: "/login", search: {} });
+    navigate({ to: "/login" });
   };
 
   const setDuration = async (c: Customer, value: DurationValue) => {
