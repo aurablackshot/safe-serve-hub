@@ -17,6 +17,15 @@ function chooseLicense(rows: CustomerLicense[]) {
   return rows.find((r) => !r.revoked && !isExpired(r.expires_at)) ?? rows[0];
 }
 
+// Licenses for these products also unlock another product's assets.
+const LINKED_PRODUCTS: Record<string, string[]> = {
+  "Test Antiwing": ["Adjustable Antiwing"],
+  Sniper: ["Adjustable Antiwing"],
+};
+function licensedProducts(product: string): string[] {
+  return [product, ...(LINKED_PRODUCTS[product] ?? [])];
+}
+
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -28,11 +37,12 @@ async function handle(key: string, hwid: string, product: string) {
     return new Response("missing_params", { status: 400, headers: CORS });
   }
 
+  const products = licensedProducts(product);
   const { data: cust, error } = await supabase
     .from("customers")
     .select("expires_at, revoked, created_at")
     .eq("hwid", hwid)
-    .eq("product", product)
+    .in("product", products)
     .order("created_at", { ascending: false })
     .limit(10);
 
@@ -56,7 +66,7 @@ async function handle(key: string, hwid: string, product: string) {
   if (!asset || !asset.file_path) {
     return new Response("asset_not_found", { status: 404, headers: CORS });
   }
-  if (asset.product !== product) {
+  if (!products.includes(asset.product)) {
     return new Response("product_mismatch", { status: 403, headers: CORS });
   }
 
