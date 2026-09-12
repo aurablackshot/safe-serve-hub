@@ -14,6 +14,17 @@ function chooseLicense(rows: CustomerLicense[]) {
   return rows.find((row) => !row.revoked && !isExpired(row.expires_at)) ?? rows[0];
 }
 
+// Licenses for these products also unlock another product's assets.
+// "Test Antiwing" and "Sniper" share the Adjustable Antiwing function/assets.
+const LINKED_PRODUCTS: Record<string, string[]> = {
+  "Test Antiwing": ["Adjustable Antiwing"],
+  Sniper: ["Adjustable Antiwing"],
+};
+
+function licensedProducts(product: string): string[] {
+  return [product, ...(LINKED_PRODUCTS[product] ?? [])];
+}
+
 async function handle(key: string, hwid: string, product: string) {
   if (!key || !hwid || !product) {
     return new Response("missing_params", { status: 400 });
