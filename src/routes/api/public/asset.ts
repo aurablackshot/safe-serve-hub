@@ -14,19 +14,32 @@ function chooseLicense(rows: CustomerLicense[]) {
   return rows.find((row) => !row.revoked && !isExpired(row.expires_at)) ?? rows[0];
 }
 
+// Licenses for these products also unlock another product's assets.
+// "Test Antiwing" and "Sniper" share the Adjustable Antiwing function/assets.
+const LINKED_PRODUCTS: Record<string, string[]> = {
+  "Test Antiwing": ["Adjustable Antiwing"],
+  Sniper: ["Adjustable Antiwing"],
+};
+
+function licensedProducts(product: string): string[] {
+  return [product, ...(LINKED_PRODUCTS[product] ?? [])];
+}
+
 async function handle(key: string, hwid: string, product: string) {
   if (!key || !hwid || !product) {
     return new Response("missing_params", { status: 400 });
   }
 
-  // License check (same logic as verify)
+  // License check (same logic as verify). Linked products (e.g. Sniper,
+  // Test Antiwing) also unlock the linked product's assets.
+  const products = licensedProducts(product);
   let cust: (CustomerLicense & { created_at: string })[] | null = null;
   try {
     const result = await supabaseAdmin
       .from("customers")
       .select("expires_at, revoked, created_at")
       .eq("hwid", hwid)
-      .eq("product", product)
+      .in("product", products)
       .order("created_at", { ascending: false })
       .limit(10);
 
@@ -56,8 +69,8 @@ async function handle(key: string, hwid: string, product: string) {
   if (!asset || !asset.file_path) {
     return new Response("asset_not_found", { status: 404 });
   }
-  // Asset must match the product the customer is licensed for
-  if (asset.product !== product) {
+  // Asset must match a product the customer is licensed for (incl. links)
+  if (!products.includes(asset.product)) {
     return new Response("product_mismatch", { status: 403 });
   }
 
