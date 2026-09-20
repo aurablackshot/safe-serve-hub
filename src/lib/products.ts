@@ -7,6 +7,7 @@ export const PRODUCTS = [
   "Sniper",
   "Quickscope",
   "Private Sniper",
+  "Friends",
 ] as const;
 
 export type Product = (typeof PRODUCTS)[number];
