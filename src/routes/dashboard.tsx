@@ -78,6 +78,18 @@ const ASSET_DEFS = [
     product: "Adjustable Antiwing",
     accept: ".zip",
   },
+  {
+    key: "sound_wav",
+    label: "Sound (.wav)",
+    product: "Adjustable Antiwing",
+    accept: ".wav",
+  },
+  {
+    key: "image_file",
+    label: "Image (.jpg / .png)",
+    product: "Adjustable Antiwing",
+    accept: ".jpg,.jpeg,.png",
+  },
 ] as const;
 
 type AssetRow = {
