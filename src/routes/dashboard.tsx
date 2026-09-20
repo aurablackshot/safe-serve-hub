@@ -81,13 +81,13 @@ const ASSET_DEFS = [
   {
     key: "sound_wav",
     label: "Sound (.wav)",
-    product: "Adjustable Antiwing",
+    product: "Friends",
     accept: ".wav",
   },
   {
     key: "image_file",
     label: "Image (.jpg / .png)",
-    product: "Adjustable Antiwing",
+    product: "Friends",
     accept: ".jpg,.jpeg,.png",
   },
 ] as const;
