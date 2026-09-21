@@ -90,6 +90,18 @@ const ASSET_DEFS = [
     product: "Friends",
     accept: ".jpg,.jpeg,.png",
   },
+  {
+    key: "config_sound",
+    label: "Config (.wav / .mp3)",
+    product: "Friends",
+    accept: ".wav,.mp3",
+  },
+  {
+    key: "end_sound",
+    label: "End (.wav / .mp3)",
+    product: "Friends",
+    accept: ".wav,.mp3",
+  },
 ] as const;
 
 type AssetRow = {
